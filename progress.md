@@ -22,31 +22,31 @@
 
 ## Phase 2 — Protocol (RESP2)
 
-- [ ] `resp_types.hpp` — RespValue variant type (simple string, error, integer, bulk string, array, null)
-- [ ] `resp_parser.hpp/cpp` — incremental RESP2 parser
-- [ ] `resp_serializer.hpp` — serialize RespValue → wire bytes
-- [ ] Tests: `resp_parser_tests.cpp`
+- [x] `resp_types.hpp` — RespValue variant type (simple string, error, integer, bulk string, array, null)
+- [x] `resp_parser.hpp/cpp` — incremental RESP2 parser
+- [x] `resp_serializer.hpp` — serialize RespValue → wire bytes
+- [x] Tests: `resp_parser_tests.cpp`
 
 ---
 
 ## Phase 3 — Core KV Store
 
-- [ ] `value.hpp` — Value type (string + future types)
-- [ ] `kv_store.hpp/cpp` — thread-safe store with `std::shared_mutex`
-  - [ ] `set`, `get`, `del`, `exists`
-  - [ ] TTL / expiry metadata per key
-  - [ ] Background expiry thread (`std::jthread`)
-- [ ] Tests: `kv_store_tests.cpp`
+- [x] `value.hpp` — Value type (string + future types)
+- [x] `kv_store.hpp/cpp` — thread-safe store with `std::shared_mutex`
+  - [x] `set`, `get`, `del`, `exists`
+  - [x] TTL / expiry metadata per key
+  - [x] Background expiry thread (`std::jthread`)
+- [x] Tests: `kv_store_tests.cpp`
 
 ---
 
 ## Phase 4 — Command Layer
 
-- [ ] `command.hpp` — Command struct (name + args)
-- [ ] `dispatcher.hpp/cpp` — route command name → handler
-- [ ] Handlers
-  - [ ] `generic_cmds` — `PING`, `DEL`, `EXISTS`, `EXPIRE`, `TTL`, `PERSIST`
-  - [ ] `string_cmds` — `SET`, `GET`, `INCR`, `INCRBY`, `DECR`, `DECRBY`
+- [x] `command.hpp` — Command struct (name + args)
+- [x] `dispatcher.hpp/cpp` — route command name → handler
+- [x] Handlers
+  - [x] `generic_cmds` — `PING`, `DEL`, `EXISTS`, `EXPIRE`, `TTL`, `PERSIST`
+  - [x] `string_cmds` — `SET`, `GET`, `INCR`, `INCRBY`, `DECR`, `DECRBY`
 
 ---
 
