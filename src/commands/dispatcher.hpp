@@ -11,6 +11,9 @@
 
 namespace vortek {
 
+// Forward declaration — avoids a circular include chain.
+class PubSubBroker;
+
 using HandlerFn = std::function<RespValue(const Command&, KvStore&)>;
 
 class Dispatcher {
@@ -23,7 +26,8 @@ public:
     RespValue dispatch(const Command& cmd, KvStore& store) const;
 
     // Build a Dispatcher pre-loaded with all built-in commands.
-    static Dispatcher make_default(ServerStats& stats);
+    // broker may be nullptr (disables PUBLISH).
+    static Dispatcher make_default(ServerStats& stats, PubSubBroker* broker = nullptr);
 
 private:
     std::unordered_map<std::string, HandlerFn> handlers_;

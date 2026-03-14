@@ -3,6 +3,7 @@
 #include "handlers/generic_cmds.hpp"
 #include "handlers/hash_cmds.hpp"
 #include "handlers/list_cmds.hpp"
+#include "handlers/pubsub_cmds.hpp"
 #include "handlers/set_cmds.hpp"
 #include "handlers/string_cmds.hpp"
 
@@ -19,13 +20,15 @@ RespValue Dispatcher::dispatch(const Command& cmd, KvStore& store) const {
     return it->second(cmd, store);
 }
 
-Dispatcher Dispatcher::make_default(ServerStats& stats) {
+Dispatcher Dispatcher::make_default(ServerStats& stats, PubSubBroker* broker) {
     Dispatcher d;
     handlers::register_generic(d, stats);
     handlers::register_string(d);
     handlers::register_list(d);
     handlers::register_set(d);
     handlers::register_hash(d);
+    if (broker)
+        handlers::register_pubsub(d, *broker);
     return d;
 }
 

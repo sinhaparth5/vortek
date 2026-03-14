@@ -1,6 +1,7 @@
 #include "commands/dispatcher.hpp"
 #include "core/kv_store.hpp"
 #include "persistence/aof_persistence.hpp"
+#include "server/pubsub_broker.hpp"
 #include "server/server.hpp"
 #include "server/server_stats.hpp"
 #include "utils/config.hpp"
@@ -92,8 +93,9 @@ int main(int argc, char* argv[]) {
     stats.port        = cfg.port;
     stats.aof_enabled = cfg.aof_enabled;
 
-    vortek::KvStore store;
-    auto            dispatcher = vortek::Dispatcher::make_default(stats);
+    vortek::KvStore      store;
+    vortek::PubSubBroker broker;
+    auto dispatcher = vortek::Dispatcher::make_default(stats, &broker);
 
     std::unique_ptr<vortek::AofPersistence> aof;
     if (cfg.aof_enabled) {
@@ -104,7 +106,7 @@ int main(int argc, char* argv[]) {
             aof.reset();
     }
 
-    vortek::Server server(cfg, store, dispatcher, aof.get(), &stats);
+    vortek::Server server(cfg, store, dispatcher, aof.get(), &stats, &broker);
     server.run();
     return 0;
 }

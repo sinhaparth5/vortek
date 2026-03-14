@@ -79,7 +79,10 @@
 
 ## Future (post-MVP)
 
-- [ ] PUB/SUB channels
+- [x] PUB/SUB channels
+  - [x] PubSubBroker — channel registry with subscribe/unsubscribe/publish
+  - [x] SUBSCRIBE / UNSUBSCRIBE — handled in Connection (push mode)
+  - [x] PUBLISH — dispatcher command, returns subscriber count
 - [x] List, Set, Hash data types
   - [x] List: LPUSH, RPUSH, LPOP, RPOP, LLEN, LRANGE, LINDEX
   - [x] Set: SADD, SREM, SMEMBERS, SISMEMBER, SCARD
