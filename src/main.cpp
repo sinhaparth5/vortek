@@ -4,10 +4,12 @@
 #include "server/server.hpp"
 #include "server/server_stats.hpp"
 #include "utils/config.hpp"
+#include "utils/config_loader.hpp"
 #include "utils/logger.hpp"
 
 #include <cstdlib>
 #include <memory>
+#include <optional>
 #include <stdexcept>
 #include <string_view>
 
@@ -16,17 +18,31 @@ static void print_usage(const char* prog) {
         "Usage: %s [options]\n"
         "\n"
         "Options:\n"
+        "  --config <path>     Load settings from a TOML config file\n"
         "  --port <n>          TCP port to listen on        (default: 6379)\n"
         "  --aof <path>        Enable AOF and set file path (default: vortek.aof)\n"
         "  --no-aof            Disable AOF persistence\n"
         "  --log-level <lvl>   debug | info | warn | error  (default: info)\n"
-        "  --help              Show this help message\n",
+        "  --help              Show this help message\n"
+        "\n"
+        "CLI options override values from --config.\n",
         prog);
 }
 
 static vortek::Config parse_args(int argc, char* argv[]) {
-    vortek::Config cfg;
+    // First pass: find --config so we can load it before applying CLI overrides.
+    std::optional<std::string> config_path;
+    for (int i = 1; i < argc; ++i) {
+        std::string_view arg = argv[i];
+        if (arg == "--config" && i + 1 < argc)
+            config_path = argv[++i];
+    }
 
+    vortek::Config cfg;
+    if (config_path)
+        cfg = vortek::load_config_file(*config_path);
+
+    // Second pass: apply individual CLI overrides on top of the loaded config.
     for (int i = 1; i < argc; ++i) {
         std::string_view arg = argv[i];
 
@@ -36,7 +52,9 @@ static vortek::Config parse_args(int argc, char* argv[]) {
             return argv[++i];
         };
 
-        if (arg == "--port") {
+        if (arg == "--config") {
+            ++i;  // already consumed above
+        } else if (arg == "--port") {
             cfg.port = static_cast<uint16_t>(std::stoi(std::string(need_next())));
         } else if (arg == "--aof") {
             cfg.aof_path    = std::string(need_next());

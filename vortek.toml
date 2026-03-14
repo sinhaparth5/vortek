@@ -1,0 +1,11 @@
+# Vortek configuration file
+# Pass to the server with: ./vortek --config vortek.toml
+# Individual CLI flags (--port, --aof, --log-level, --no-aof) override these values.
+
+[server]
+port      = 6379
+log_level = "info"   # debug | info | warn | error
+
+[persistence]
+aof_enabled = true
+aof_path    = "vortek.aof"

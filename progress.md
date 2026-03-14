@@ -81,6 +81,6 @@
 
 - [ ] PUB/SUB channels
 - [ ] List, Set, Hash data types
-- [ ] TOML/JSON config file
+- [x] TOML/JSON config file
 - [x] INFO command — server, clients, stats, keyspace sections
 - [ ] Benchmark suite

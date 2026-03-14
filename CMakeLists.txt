@@ -75,6 +75,17 @@ add_library(vortek_spdlog INTERFACE)
 target_include_directories(vortek_spdlog SYSTEM INTERFACE ${spdlog_SOURCE_DIR}/include)
 target_compile_definitions(vortek_spdlog INTERFACE SPDLOG_HEADER_ONLY)
 
+# toml++ (header-only)
+FetchContent_Declare(
+    tomlplusplus
+    GIT_REPOSITORY https://github.com/marzer/tomlplusplus.git
+    GIT_TAG        v3.4.0
+    GIT_SHALLOW    TRUE
+)
+FetchContent_MakeAvailable(tomlplusplus)
+add_library(vortek_toml INTERFACE)
+target_include_directories(vortek_toml SYSTEM INTERFACE ${tomlplusplus_SOURCE_DIR}/include)
+
 # Core library — shared between the main executable and tests
 add_library(vortek_lib STATIC
     src/server/server.cpp
@@ -85,6 +96,7 @@ add_library(vortek_lib STATIC
     src/commands/handlers/generic_cmds.cpp
     src/commands/handlers/string_cmds.cpp
     src/persistence/aof_persistence.cpp
+    src/utils/config_loader.cpp
 )
 
 target_include_directories(vortek_lib PUBLIC ${CMAKE_SOURCE_DIR}/src)
@@ -94,6 +106,7 @@ target_link_libraries(vortek_lib
         Threads::Threads
         asio::asio
         vortek_spdlog
+        vortek_toml
     PRIVATE
         vortek_warnings
 )
