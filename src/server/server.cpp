@@ -7,11 +7,15 @@
 
 namespace vortek {
 
-Server::Server(const Config& cfg, KvStore& store, const Dispatcher& dispatcher)
+Server::Server(const Config&     cfg,
+               KvStore&          store,
+               const Dispatcher& dispatcher,
+               AofPersistence*   aof)
     : acceptor_(io_ctx_,
                 asio::ip::tcp::endpoint(asio::ip::tcp::v4(), cfg.port))
     , store_(store)
-    , dispatcher_(dispatcher) {
+    , dispatcher_(dispatcher)
+    , aof_(aof) {
     acceptor_.set_option(asio::ip::tcp::acceptor::reuse_address(true));
     log::info("Vortek listening on port " + std::to_string(cfg.port));
 }
@@ -31,7 +35,7 @@ void Server::do_accept() {
             if (!ec) {
                 auto addr = socket.remote_endpoint().address().to_string();
                 log::info("new connection from " + addr);
-                Connection::create(std::move(socket), store_, dispatcher_)->start();
+                Connection::create(std::move(socket), store_, dispatcher_, aof_)->start();
             } else {
                 log::error("accept error: " + ec.message());
             }

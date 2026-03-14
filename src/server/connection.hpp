@@ -2,6 +2,7 @@
 
 #include "commands/dispatcher.hpp"
 #include "core/kv_store.hpp"
+#include "persistence/aof_persistence.hpp"
 #include "protocol/resp_parser.hpp"
 
 #include <asio.hpp>
@@ -22,9 +23,11 @@ namespace vortek {
 class Connection : public std::enable_shared_from_this<Connection> {
 public:
     // Factory — private constructor, use this to create connections.
+    // aof may be nullptr if persistence is disabled.
     static std::shared_ptr<Connection> create(asio::ip::tcp::socket socket,
                                               KvStore&              store,
-                                              const Dispatcher&     dispatcher);
+                                              const Dispatcher&     dispatcher,
+                                              AofPersistence*       aof);
 
     // Begin the async read/write loop.
     void start();
@@ -32,7 +35,8 @@ public:
 private:
     Connection(asio::ip::tcp::socket socket,
                KvStore&              store,
-               const Dispatcher&     dispatcher);
+               const Dispatcher&     dispatcher,
+               AofPersistence*       aof);
 
     void do_read();
     void handle_data(std::size_t bytes);
@@ -41,6 +45,7 @@ private:
     asio::ip::tcp::socket  socket_;
     KvStore&               store_;
     const Dispatcher&      dispatcher_;
+    AofPersistence*        aof_;  // non-owning, may be null
     RespParser             parser_;
     std::array<char, 4096> read_buf_;
     std::string            write_buf_;

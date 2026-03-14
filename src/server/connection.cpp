@@ -12,16 +12,20 @@ namespace vortek {
 
 std::shared_ptr<Connection> Connection::create(asio::ip::tcp::socket socket,
                                                KvStore&              store,
-                                               const Dispatcher&     dispatcher) {
-    // Can't use make_shared because the constructor is private.
+                                               const Dispatcher&     dispatcher,
+                                               AofPersistence*       aof) {
     return std::shared_ptr<Connection>(
-        new Connection(std::move(socket), store, dispatcher));
+        new Connection(std::move(socket), store, dispatcher, aof));
 }
 
 Connection::Connection(asio::ip::tcp::socket socket,
                        KvStore&              store,
-                       const Dispatcher&     dispatcher)
-    : socket_(std::move(socket)), store_(store), dispatcher_(dispatcher) {}
+                       const Dispatcher&     dispatcher,
+                       AofPersistence*       aof)
+    : socket_(std::move(socket))
+    , store_(store)
+    , dispatcher_(dispatcher)
+    , aof_(aof) {}
 
 // ---------------------------------------------------------------------------
 // Public
@@ -41,7 +45,6 @@ void Connection::do_read() {
         asio::buffer(read_buf_),
         [this, self](const asio::error_code& ec, std::size_t bytes) {
             if (ec) {
-                // EOF or connection reset — let the shared_ptr expire naturally.
                 if (ec != asio::error::eof && ec != asio::error::connection_reset)
                     log::error("read error: " + ec.message());
                 return;
@@ -54,8 +57,6 @@ void Connection::handle_data(std::size_t bytes) {
     std::string responses;
 
     try {
-        // Feed new bytes into the parser, then drain all complete messages
-        // (one network read may contain several pipelined commands).
         std::string_view chunk(read_buf_.data(), bytes);
         bool             first = true;
 
@@ -65,14 +66,18 @@ void Connection::handle_data(std::size_t bytes) {
             if (!val) break;
 
             auto cmd = parse_command(*val);
-            if (cmd) {
-                responses += serialize(dispatcher_.dispatch(*cmd, store_));
-            } else {
+            if (!cmd) {
                 responses += serialize(
                     RespError{"ERR protocol error: expected command array"});
                 parser_.reset();
                 break;
             }
+
+            // Log to AOF before dispatching (only for write commands).
+            if (aof_ && AofPersistence::is_write_command(cmd->name))
+                aof_->log(*cmd);
+
+            responses += serialize(dispatcher_.dispatch(*cmd, store_));
         }
     } catch (const std::exception& ex) {
         responses += serialize(RespError{"ERR " + std::string(ex.what())});
@@ -86,8 +91,8 @@ void Connection::handle_data(std::size_t bytes) {
 }
 
 void Connection::do_write(std::string data) {
-    write_buf_  = std::move(data);
-    auto self   = shared_from_this();
+    write_buf_ = std::move(data);
+    auto self  = shared_from_this();
     asio::async_write(
         socket_,
         asio::buffer(write_buf_),
