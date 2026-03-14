@@ -1,0 +1,43 @@
+#include "server.hpp"
+
+#include "connection.hpp"
+#include "utils/logger.hpp"
+
+#include <string>
+
+namespace vortek {
+
+Server::Server(const Config& cfg, KvStore& store, const Dispatcher& dispatcher)
+    : acceptor_(io_ctx_,
+                asio::ip::tcp::endpoint(asio::ip::tcp::v4(), cfg.port))
+    , store_(store)
+    , dispatcher_(dispatcher) {
+    acceptor_.set_option(asio::ip::tcp::acceptor::reuse_address(true));
+    log::info("Vortek listening on port " + std::to_string(cfg.port));
+}
+
+void Server::run() {
+    do_accept();
+    io_ctx_.run();
+}
+
+void Server::stop() {
+    io_ctx_.stop();
+}
+
+void Server::do_accept() {
+    acceptor_.async_accept(
+        [this](const asio::error_code& ec, asio::ip::tcp::socket socket) {
+            if (!ec) {
+                auto addr = socket.remote_endpoint().address().to_string();
+                log::info("new connection from " + addr);
+                Connection::create(std::move(socket), store_, dispatcher_)->start();
+            } else {
+                log::error("accept error: " + ec.message());
+            }
+            // Keep accepting regardless of individual connection errors.
+            do_accept();
+        });
+}
+
+}  // namespace vortek
