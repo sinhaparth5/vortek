@@ -60,6 +60,21 @@ FetchContent_Declare(
 FetchContent_MakeAvailable(Catch2)
 list(APPEND CMAKE_MODULE_PATH ${catch2_SOURCE_DIR}/extras)
 
+# spdlog (header-only)
+FetchContent_Declare(
+    spdlog
+    GIT_REPOSITORY https://github.com/gabime/spdlog.git
+    GIT_TAG        v1.14.1
+    GIT_SHALLOW    TRUE
+)
+FetchContent_MakeAvailable(spdlog)
+# spdlog::spdlog_header_only is an ALIAS and can't be modified.
+# Wrap it in our own interface target so headers are treated as SYSTEM
+# (suppresses warnings from spdlog internals in our translation units).
+add_library(vortek_spdlog INTERFACE)
+target_include_directories(vortek_spdlog SYSTEM INTERFACE ${spdlog_SOURCE_DIR}/include)
+target_compile_definitions(vortek_spdlog INTERFACE SPDLOG_HEADER_ONLY)
+
 # Core library — shared between the main executable and tests
 add_library(vortek_lib STATIC
     src/server/server.cpp
@@ -78,6 +93,7 @@ target_link_libraries(vortek_lib
     PUBLIC
         Threads::Threads
         asio::asio
+        vortek_spdlog
     PRIVATE
         vortek_warnings
 )

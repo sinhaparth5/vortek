@@ -60,20 +60,20 @@
 
 ## Phase 6 — Persistence (AOF)
 
-- [ ] `aof_persistence.hpp/cpp`
-  - [ ] Append write commands to file
-  - [ ] Replay AOF on startup
+- [x] `aof_persistence.hpp/cpp`
+  - [x] Append write commands to file
+  - [x] Replay AOF on startup
 
 ---
 
 ## Phase 7 — Polish
 
-- [ ] Logger (`utils/logger.hpp`) — structured logging via spdlog or std::print
-- [ ] Config (`utils/config.hpp`) — port, AOF path, log level
-- [ ] `error.hpp` — typed error codes / result type
-- [ ] `byte_view.hpp` — non-owning byte span helper
-- [ ] README build/run instructions verified
-- [ ] Benchmark / smoke test with `redis-cli`
+- [x] Logger (`utils/logger.hpp`) — spdlog with timestamps, colors, configurable level
+- [x] Config (`utils/config.hpp`) — port, AOF path, log level
+- [x] `error.hpp` — typed error codes / result type
+- [x] `byte_view.hpp` — non-owning byte span helper
+- [x] README build/run instructions verified
+- [x] Smoke test — `scripts/smoke_test.sh`
 
 ---
 

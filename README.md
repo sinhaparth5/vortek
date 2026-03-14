@@ -2,74 +2,138 @@
 
 **Vortek** is a lightweight, high-performance **in-memory key-value store** written in modern C++20.
 
-It aims to be a clean, understandable, and extensible alternative to Redis — with focus on good software engineering practices, thread safety, async I/O, and minimal dependencies.
+It implements a Redis-compatible wire protocol (RESP2) with a focus on clean architecture, thread safety, async I/O, and minimal dependencies — built as a portfolio/learning project.
 
-Currently in **early development** — many features are still being implemented.
+## Features
 
-## Features (planned / partially implemented)
-
-- RESP2 protocol support (Redis-compatible wire protocol)
-- Core commands:
-  - `SET`, `GET`, `DEL`, `EXISTS`, `PING`
-  - `INCR`, `INCRBY`, `DECR`, `DECRBY`
-  - `EXPIRE`, `TTL`, `PERSIST`
-- Thread-safe concurrent access (multiple client connections)
-- Background key expiration & eviction
-- Append-Only File (AOF) persistence (optional)
-- Asynchronous networking using standalone **Asio**
-- Clean, modular architecture with unit tests
-- CMake-based build system
-
-Future goals (subject to change):
-
-- Basic PUB/SUB channels
-- More data types (lists, sets, hashes)
-- Configuration file support (TOML/JSON)
-- Better monitoring / INFO command
-- Benchmark suite & performance numbers
-
-## Why another Redis clone?
-
-Vortek is **not** trying to replace Redis in production at massive scale.
-
-The main goals are:
-
-- Educational / learning project demonstrating modern C++ in real-world server context
-- Clean code base that is easy to read, extend, and understand
-- Playground for experimenting with concurrency patterns, async I/O, protocol parsing, memory management
-- Resume / portfolio piece showing systems programming skills
+- **RESP2 protocol** — fully compatible with `redis-cli` and any Redis client library
+- **Core commands** — `SET`, `GET`, `DEL`, `EXISTS`, `PING`, `INCR`, `INCRBY`, `DECR`, `DECRBY`, `EXPIRE`, `TTL`, `PERSIST`
+- **SET options** — `EX` (seconds TTL), `PX` (milliseconds TTL), `NX` (only if absent), `XX` (only if present)
+- **Thread-safe** — `std::shared_mutex` for concurrent reads, exclusive writes
+- **Key expiry** — lazy expiry on every read + background sweep every 100 ms (`std::jthread`)
+- **AOF persistence** — write commands are appended to a file and replayed on startup
+- **Async networking** — standalone Asio, no Boost required
+- **Structured logging** — spdlog with configurable log level
 
 ## Tech Stack
 
-- **Language**: C++20
-- **Networking**: standalone [Asio](https://think-async.com/Asio/)
-- **Build system**: CMake 3.22+
-- **Concurrency**: `std::jthread`, `std::shared_mutex`, `std::stop_token`, etc.
-- **Testing**: Catch2 (planned)
-- **Logging**: spdlog (optional / planned)
-- **No Boost dependency** (standalone Asio only)
+| Concern | Library / Feature |
+|---|---|
+| Language | C++20 |
+| Networking | [Asio](https://think-async.com/Asio/) (standalone, no Boost) |
+| Concurrency | `std::jthread`, `std::shared_mutex`, `std::stop_token` |
+| Logging | [spdlog](https://github.com/gabime/spdlog) |
+| Testing | [Catch2 v3](https://github.com/catchorg/Catch2) |
+| Build | CMake 3.22+ with FetchContent (no manual installs) |
 
 ## Requirements
 
-- C++20 compliant compiler (GCC 11+, Clang 13+, MSVC 19.29+)
+- C++20 compiler: GCC 11+, Clang 13+, or MSVC 19.29+
 - CMake 3.22+
-- Threads support (`pthread` on Linux/macOS)
+- Internet access on first build (FetchContent downloads Asio, Catch2, spdlog)
 
 ## Build & Run
 
 ```bash
-# 1. Clone
+# Clone
 git clone https://github.com/YOUR_USERNAME/vortek.git
 cd vortek
 
-# 2. Create build directory
-mkdir build && cd build
+# Configure + build (Debug)
+cmake -B build -DCMAKE_BUILD_TYPE=Debug
+cmake --build build --parallel
 
-# 3. Configure
-cmake .. -DCMAKE_BUILD_TYPE=Release
+# Run with defaults (port 6379, AOF enabled → vortek.aof)
+./build/vortek
 
-# 4. Build
-cmake --build . --parallel
+# Run with custom options
+./build/vortek --port 6380 --aof /tmp/mystore.aof --log-level debug
 
-# 5. Run (default port 6379)
-./vortek
+# Disable AOF
+./build/vortek --no-aof
+
+# Help
+./build/vortek --help
+```
+
+## CLI Options
+
+| Flag | Default | Description |
+|---|---|---|
+| `--port <n>` | `6379` | TCP port to listen on |
+| `--aof <path>` | `vortek.aof` | Enable AOF and set the file path |
+| `--no-aof` | — | Disable AOF persistence |
+| `--log-level <lvl>` | `info` | `debug` \| `info` \| `warn` \| `error` |
+| `--help` | — | Print usage and exit |
+
+## Running Tests
+
+```bash
+cmake --build build --parallel
+cd build && ctest --output-on-failure
+```
+
+## Smoke Test
+
+With a server running, exercise all commands end-to-end:
+
+```bash
+./scripts/smoke_test.sh
+# or against a non-default host/port:
+./scripts/smoke_test.sh 127.0.0.1 6380
+```
+
+## Supported Commands
+
+| Command | Syntax | Description |
+|---|---|---|
+| `PING` | `PING [msg]` | Returns `PONG` or echoes `msg` |
+| `SET` | `SET key value [EX s] [PX ms] [NX\|XX]` | Set a key |
+| `GET` | `GET key` | Get a key's value |
+| `DEL` | `DEL key [key ...]` | Delete one or more keys |
+| `EXISTS` | `EXISTS key [key ...]` | Count how many keys exist |
+| `EXPIRE` | `EXPIRE key seconds` | Set a TTL in seconds |
+| `TTL` | `TTL key` | Get remaining TTL (`-1` = no expiry, `-2` = missing) |
+| `PERSIST` | `PERSIST key` | Remove TTL from a key |
+| `INCR` | `INCR key` | Increment integer value by 1 |
+| `DECR` | `DECR key` | Decrement integer value by 1 |
+| `INCRBY` | `INCRBY key n` | Increment by `n` |
+| `DECRBY` | `DECRBY key n` | Decrement by `n` |
+
+## Architecture
+
+```
+src/
+├── main.cpp                  — entry point, CLI parsing
+├── server/
+│   ├── server.hpp/cpp        — TCP acceptor, io_context
+│   └── connection.hpp/cpp    — per-client async read/write loop
+├── protocol/
+│   ├── resp_types.hpp        — RespValue variant (null, string, error, int, bulk, array)
+│   ├── resp_parser.hpp/cpp   — incremental RESP2 parser
+│   └── resp_serializer.hpp   — serialize RespValue → wire bytes
+├── core/
+│   ├── value.hpp             — Value type (string, extensible to list/set/hash)
+│   └── kv_store.hpp/cpp      — thread-safe store with background expiry
+├── commands/
+│   ├── command.hpp           — Command struct + parse_command()
+│   ├── dispatcher.hpp/cpp    — routes command name → handler
+│   └── handlers/
+│       ├── generic_cmds      — PING, DEL, EXISTS, EXPIRE, TTL, PERSIST
+│       └── string_cmds       — SET, GET, INCR, INCRBY, DECR, DECRBY
+├── persistence/
+│   └── aof_persistence.hpp/cpp — AOF write + replay
+└── utils/
+    ├── logger.hpp            — spdlog wrapper
+    ├── config.hpp            — runtime configuration struct
+    ├── error.hpp             — typed error codes
+    └── byte_view.hpp         — std::span<const std::byte> alias
+```
+
+## Why Vortek?
+
+Vortek is not trying to replace Redis in production. The goals are:
+
+- Demonstrate modern C++ in a real-world server context (async I/O, concurrency, protocol parsing)
+- Keep the codebase readable, modular, and easy to extend
+- Serve as a portfolio piece showing systems programming skills

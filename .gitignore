@@ -35,3 +35,4 @@ external/
 *.swp
 *~
 .DS_Store
+vortek.aof
