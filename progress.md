@@ -52,9 +52,9 @@
 
 ## Phase 5 — Networking
 
-- [ ] `connection.hpp/cpp` — async read/write per client (Asio)
-- [ ] `server.hpp/cpp` — TCP acceptor, connection lifecycle
-- [ ] `main.cpp` — wire everything together, listen on port 6379
+- [x] `connection.hpp/cpp` — async read/write per client (Asio)
+- [x] `server.hpp/cpp` — TCP acceptor, connection lifecycle
+- [x] `main.cpp` — wire everything together, listen on port 6379
 
 ---
 
