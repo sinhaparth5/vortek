@@ -1,0 +1,72 @@
+---
+Language:        Cpp
+BasedOnStyle:    LLVM
+
+# Language standard
+Standard: c++20
+
+# Indentation
+IndentWidth:              4
+TabWidth:                 4
+UseTab:                   Never
+AccessModifierOffset:     -4   # public:/private: sit flush with the class brace
+NamespaceIndentation:     None
+IndentCaseLabels:         true
+
+# Line length
+ColumnLimit: 100
+
+# Braces — attached (K&R / Stroustrup, not Allman)
+BreakBeforeBraces: Attach
+
+# Short constructs
+AllowShortBlocksOnASingleLine:     Empty
+AllowShortFunctionsOnASingleLine:  Inline
+AllowShortIfStatementsOnASingleLine: Never
+AllowShortLoopsOnASingleLine:      false
+AllowShortLambdasOnASingleLine:    Inline
+
+# Alignment
+AlignAfterOpenBracket:        Align
+AlignConsecutiveMacros:       false
+AlignConsecutiveAssignments:  false
+AlignConsecutiveDeclarations: false
+AlignOperands:                Align
+AlignTrailingComments:        true
+
+# Pointers and references attach to the type, not the name
+PointerAlignment: Left
+ReferenceAlignment: Left
+
+# Includes: project headers first, then system headers
+SortIncludes:   CaseSensitive
+IncludeBlocks:  Regroup
+IncludeCategories:
+  - Regex:    '^"'        # "project/header.hpp"
+    Priority: 1
+  - Regex:    '^<'        # <system_header>
+    Priority: 2
+
+# Spacing
+SpaceAfterCStyleCast:        false
+SpaceBeforeParens:           ControlStatements
+SpaceInEmptyParentheses:     false
+SpacesInAngles:              Never
+SpacesInParentheses:         false
+SpacesInSquareBrackets:      false
+SpaceBeforeRangeBasedForLoopColon: true
+
+# Modern C++ features
+Cpp11BracedListStyle:            true
+BreakConstructorInitializers:    BeforeColon
+ConstructorInitializerIndentWidth: 4
+PackConstructorInitializers:     Never
+
+# Function parameters / call arguments
+BinPackParameters:  false
+BinPackArguments:   false
+AllowAllParametersOfDeclarationOnNextLine: false
+
+# Long function signatures break before the return type stays, args wrap
+AlwaysBreakAfterReturnType: None
+PenaltyReturnTypeOnItsOwnLine: 200
