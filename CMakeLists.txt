@@ -46,7 +46,7 @@ FetchContent_Declare(
 FetchContent_MakeAvailable(asio)
 
 add_library(asio::asio INTERFACE IMPORTED)
-target_include_directories(asio::asio INTERFACE ${asio_SOURCE_DIR}/asio/include)
+target_include_directories(asio::asio SYSTEM INTERFACE ${asio_SOURCE_DIR}/asio/include)
 target_compile_definitions(asio::asio INTERFACE ASIO_STANDALONE)
 target_link_libraries(asio::asio INTERFACE Threads::Threads)
 
