@@ -80,7 +80,10 @@
 ## Future (post-MVP)
 
 - [ ] PUB/SUB channels
-- [ ] List, Set, Hash data types
+- [x] List, Set, Hash data types
+  - [x] List: LPUSH, RPUSH, LPOP, RPOP, LLEN, LRANGE, LINDEX
+  - [x] Set: SADD, SREM, SMEMBERS, SISMEMBER, SCARD
+  - [x] Hash: HSET, HGET, HDEL, HGETALL, HEXISTS, HLEN
 - [x] TOML/JSON config file
 - [x] INFO command — server, clients, stats, keyspace sections
 - [ ] Benchmark suite

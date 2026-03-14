@@ -1,6 +1,9 @@
 #include "dispatcher.hpp"
 
 #include "handlers/generic_cmds.hpp"
+#include "handlers/hash_cmds.hpp"
+#include "handlers/list_cmds.hpp"
+#include "handlers/set_cmds.hpp"
 #include "handlers/string_cmds.hpp"
 
 namespace vortek {
@@ -20,6 +23,9 @@ Dispatcher Dispatcher::make_default(ServerStats& stats) {
     Dispatcher d;
     handlers::register_generic(d, stats);
     handlers::register_string(d);
+    handlers::register_list(d);
+    handlers::register_set(d);
+    handlers::register_hash(d);
     return d;
 }
 

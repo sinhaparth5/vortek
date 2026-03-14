@@ -38,7 +38,11 @@ bool AofPersistence::is_open() const noexcept {
 
 bool AofPersistence::is_write_command(std::string_view name) noexcept {
     static const std::unordered_set<std::string_view> writes = {
-        "SET", "DEL", "EXPIRE", "PERSIST", "INCR", "INCRBY", "DECR", "DECRBY",
+        "SET",   "DEL",    "EXPIRE",  "PERSIST",
+        "INCR",  "INCRBY", "DECR",    "DECRBY",
+        "LPUSH", "RPUSH",  "LPOP",    "RPOP",
+        "SADD",  "SREM",
+        "HSET",  "HDEL",
     };
     return writes.count(name) > 0;
 }

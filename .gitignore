@@ -36,3 +36,4 @@ external/
 *~
 .DS_Store
 vortek.aof
+vortek.toml

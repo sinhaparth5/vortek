@@ -95,6 +95,9 @@ add_library(vortek_lib STATIC
     src/commands/dispatcher.cpp
     src/commands/handlers/generic_cmds.cpp
     src/commands/handlers/string_cmds.cpp
+    src/commands/handlers/list_cmds.cpp
+    src/commands/handlers/set_cmds.cpp
+    src/commands/handlers/hash_cmds.cpp
     src/persistence/aof_persistence.cpp
     src/utils/config_loader.cpp
 )

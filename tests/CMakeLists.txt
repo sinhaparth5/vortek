@@ -3,6 +3,7 @@ add_executable(vortek_tests
     kv_store_tests.cpp
     resp_parser_tests.cpp
     command_tests.cpp
+    collection_tests.cpp
 )
 
 target_link_libraries(vortek_tests
