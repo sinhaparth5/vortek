@@ -89,4 +89,8 @@
   - [x] Hash: HSET, HGET, HDEL, HGETALL, HEXISTS, HLEN
 - [x] TOML/JSON config file
 - [x] INFO command — server, clients, stats, keyspace sections
-- [ ] Benchmark suite
+- [x] Benchmark suite
+  - [x] `benchmarks/bench_kv_store.cpp` — KvStore set/get/del/exists, single + multi-threaded
+  - [x] `benchmarks/bench_resp_parser.cpp` — parser throughput per type + 100-command pipeline
+  - [x] `benchmarks/bench_dispatcher.cpp` — end-to-end command dispatch for all types
+  - [x] `scripts/benchmark.sh` — network-level benchmark via redis-benchmark

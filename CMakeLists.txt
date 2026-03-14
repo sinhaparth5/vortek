@@ -125,6 +125,26 @@ target_link_libraries(vortek
         vortek_warnings
 )
 
+# Google Benchmark
+FetchContent_Declare(
+    googlebenchmark
+    GIT_REPOSITORY https://github.com/google/benchmark.git
+    GIT_TAG        v1.8.4
+    GIT_SHALLOW    TRUE
+)
+set(BENCHMARK_ENABLE_TESTING   OFF CACHE BOOL "" FORCE)
+set(BENCHMARK_ENABLE_INSTALL   OFF CACHE BOOL "" FORCE)
+set(BENCHMARK_ENABLE_GTEST_TESTS OFF CACHE BOOL "" FORCE)
+FetchContent_MakeAvailable(googlebenchmark)
+# Suppress warnings from benchmark headers in our TUs
+add_library(vortek_benchmark INTERFACE)
+target_include_directories(vortek_benchmark SYSTEM INTERFACE
+    ${googlebenchmark_SOURCE_DIR}/include)
+target_link_libraries(vortek_benchmark INTERFACE benchmark::benchmark)
+
 # Tests
 enable_testing()
 add_subdirectory(tests)
+
+# Benchmarks
+add_subdirectory(benchmarks)
