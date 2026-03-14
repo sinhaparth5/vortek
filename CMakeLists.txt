@@ -16,11 +16,13 @@ set(CMAKE_CXX_EXTENSIONS OFF)
 # Helpful for IDEs (clangd, YouCompleteMe, etc.)
 set(CMAKE_EXPORT_COMPILE_COMMANDS ON)
 
-# Good set of warnings - catch bugs early
+# Good set of warnings — scoped to our own targets via an INTERFACE library
+# so that third-party deps fetched by FetchContent are not affected.
+add_library(vortek_warnings INTERFACE)
 if (MSVC)
-    add_compile_options(/W4 /permissive- /WX)
+    target_compile_options(vortek_warnings INTERFACE /W4 /permissive- /WX)
 else()
-    add_compile_options(
+    target_compile_options(vortek_warnings INTERFACE
         -Wall -Wextra -Wpedantic
         -Wshadow -Wnon-virtual-dtor -Wold-style-cast
         -Wcast-align -Wunused -Woverloaded-virtual
@@ -58,9 +60,7 @@ FetchContent_Declare(
 FetchContent_MakeAvailable(Catch2)
 list(APPEND CMAKE_MODULE_PATH ${catch2_SOURCE_DIR}/extras)
 
-# ---------------------------------------------------------------------------
 # Core library — shared between the main executable and tests
-# ---------------------------------------------------------------------------
 add_library(vortek_lib STATIC
     src/server/server.cpp
     src/server/connection.cpp
@@ -78,20 +78,19 @@ target_link_libraries(vortek_lib
     PUBLIC
         Threads::Threads
         asio::asio
+    PRIVATE
+        vortek_warnings
 )
 
-# ---------------------------------------------------------------------------
 # Main executable
-# ---------------------------------------------------------------------------
 add_executable(vortek src/main.cpp)
 
 target_link_libraries(vortek
     PRIVATE
         vortek_lib
+        vortek_warnings
 )
 
-# ---------------------------------------------------------------------------
 # Tests
-# ---------------------------------------------------------------------------
 enable_testing()
 add_subdirectory(tests)
