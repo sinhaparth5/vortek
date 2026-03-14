@@ -2,6 +2,7 @@
 #include "core/kv_store.hpp"
 #include "persistence/aof_persistence.hpp"
 #include "server/server.hpp"
+#include "server/server_stats.hpp"
 #include "utils/config.hpp"
 #include "utils/logger.hpp"
 
@@ -10,16 +11,12 @@
 #include <stdexcept>
 #include <string_view>
 
-// ---------------------------------------------------------------------------
-// CLI argument parsing
-// ---------------------------------------------------------------------------
-
 static void print_usage(const char* prog) {
     std::printf(
         "Usage: %s [options]\n"
         "\n"
         "Options:\n"
-        "  --port <n>          TCP port to listen on       (default: 6379)\n"
+        "  --port <n>          TCP port to listen on        (default: 6379)\n"
         "  --aof <path>        Enable AOF and set file path (default: vortek.aof)\n"
         "  --no-aof            Disable AOF persistence\n"
         "  --log-level <lvl>   debug | info | warn | error  (default: info)\n"
@@ -59,13 +56,8 @@ static vortek::Config parse_args(int argc, char* argv[]) {
     return cfg;
 }
 
-// ---------------------------------------------------------------------------
-// Entry point
-// ---------------------------------------------------------------------------
-
 int main(int argc, char* argv[]) {
     vortek::Config cfg;
-
     try {
         cfg = parse_args(argc, argv);
     } catch (const std::exception& ex) {
@@ -77,8 +69,13 @@ int main(int argc, char* argv[]) {
     vortek::log::set_level(cfg.log_level);
     vortek::log::info("Vortek v0.1.0 starting");
 
+    // Stats — populated before dispatcher so INFO handler sees the right values.
+    vortek::ServerStats stats;
+    stats.port        = cfg.port;
+    stats.aof_enabled = cfg.aof_enabled;
+
     vortek::KvStore store;
-    auto            dispatcher = vortek::Dispatcher::make_default();
+    auto            dispatcher = vortek::Dispatcher::make_default(stats);
 
     std::unique_ptr<vortek::AofPersistence> aof;
     if (cfg.aof_enabled) {
@@ -89,7 +86,7 @@ int main(int argc, char* argv[]) {
             aof.reset();
     }
 
-    vortek::Server server(cfg, store, dispatcher, aof.get());
+    vortek::Server server(cfg, store, dispatcher, aof.get(), &stats);
     server.run();
     return 0;
 }

@@ -3,6 +3,7 @@
 #include "command.hpp"
 #include "core/kv_store.hpp"
 #include "protocol/resp_types.hpp"
+#include "server/server_stats.hpp"
 
 #include <functional>
 #include <string>
@@ -22,7 +23,7 @@ public:
     RespValue dispatch(const Command& cmd, KvStore& store) const;
 
     // Build a Dispatcher pre-loaded with all built-in commands.
-    static Dispatcher make_default();
+    static Dispatcher make_default(ServerStats& stats);
 
 private:
     std::unordered_map<std::string, HandlerFn> handlers_;

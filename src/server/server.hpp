@@ -3,26 +3,22 @@
 #include "commands/dispatcher.hpp"
 #include "core/kv_store.hpp"
 #include "persistence/aof_persistence.hpp"
+#include "server/server_stats.hpp"
 #include "utils/config.hpp"
 
 #include <asio.hpp>
 
 namespace vortek {
 
-// TCP server — owns the io_context and the acceptor.
-// Call run() to start accepting (blocks until stop() is called).
 class Server {
 public:
-    // aof may be nullptr if persistence is disabled.
-    Server(const Config&   cfg,
-           KvStore&        store,
+    Server(const Config&     cfg,
+           KvStore&          store,
            const Dispatcher& dispatcher,
-           AofPersistence* aof = nullptr);
+           AofPersistence*   aof   = nullptr,
+           ServerStats*      stats = nullptr);
 
-    // Start the accept loop and run the event loop (blocks).
     void run();
-
-    // Signal the event loop to stop gracefully.
     void stop();
 
 private:
@@ -32,7 +28,8 @@ private:
     asio::ip::tcp::acceptor acceptor_;
     KvStore&                store_;
     const Dispatcher&       dispatcher_;
-    AofPersistence*         aof_;  // non-owning, may be null
+    AofPersistence*         aof_;
+    ServerStats*            stats_;
 };
 
 }  // namespace vortek

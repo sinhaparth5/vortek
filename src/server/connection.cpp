@@ -7,25 +7,36 @@
 namespace vortek {
 
 // ---------------------------------------------------------------------------
-// Factory + constructor
+// Factory + constructor/destructor
 // ---------------------------------------------------------------------------
 
 std::shared_ptr<Connection> Connection::create(asio::ip::tcp::socket socket,
                                                KvStore&              store,
                                                const Dispatcher&     dispatcher,
-                                               AofPersistence*       aof) {
+                                               AofPersistence*       aof,
+                                               ServerStats*          stats) {
     return std::shared_ptr<Connection>(
-        new Connection(std::move(socket), store, dispatcher, aof));
+        new Connection(std::move(socket), store, dispatcher, aof, stats));
 }
 
 Connection::Connection(asio::ip::tcp::socket socket,
                        KvStore&              store,
                        const Dispatcher&     dispatcher,
-                       AofPersistence*       aof)
+                       AofPersistence*       aof,
+                       ServerStats*          stats)
     : socket_(std::move(socket))
     , store_(store)
     , dispatcher_(dispatcher)
-    , aof_(aof) {}
+    , aof_(aof)
+    , stats_(stats) {
+    if (stats_)
+        stats_->connected_clients.fetch_add(1, std::memory_order_relaxed);
+}
+
+Connection::~Connection() {
+    if (stats_)
+        stats_->connected_clients.fetch_sub(1, std::memory_order_relaxed);
+}
 
 // ---------------------------------------------------------------------------
 // Public
@@ -73,11 +84,13 @@ void Connection::handle_data(std::size_t bytes) {
                 break;
             }
 
-            // Log to AOF before dispatching (only for write commands).
             if (aof_ && AofPersistence::is_write_command(cmd->name))
                 aof_->log(*cmd);
 
             responses += serialize(dispatcher_.dispatch(*cmd, store_));
+
+            if (stats_)
+                stats_->total_commands.fetch_add(1, std::memory_order_relaxed);
         }
     } catch (const std::exception& ex) {
         responses += serialize(RespError{"ERR " + std::string(ex.what())});

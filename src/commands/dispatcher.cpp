@@ -16,9 +16,9 @@ RespValue Dispatcher::dispatch(const Command& cmd, KvStore& store) const {
     return it->second(cmd, store);
 }
 
-Dispatcher Dispatcher::make_default() {
+Dispatcher Dispatcher::make_default(ServerStats& stats) {
     Dispatcher d;
-    handlers::register_generic(d);
+    handlers::register_generic(d, stats);
     handlers::register_string(d);
     return d;
 }
