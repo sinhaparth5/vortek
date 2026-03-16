@@ -16,7 +16,7 @@
   - [x] FetchContent for Catch2 v3
   - [x] `vortek_lib` static library target
   - [x] Test executable wired up
-  - [ ] Verify clean build end-to-end
+  - [x] Verify clean build end-to-end
 
 ---
 
@@ -94,3 +94,30 @@
   - [x] `benchmarks/bench_resp_parser.cpp` — parser throughput per type + 100-command pipeline
   - [x] `benchmarks/bench_dispatcher.cpp` — end-to-end command dispatch for all types
   - [x] `scripts/benchmark.sh` — network-level benchmark via redis-benchmark
+
+---
+
+## Phase 8 — Production Readiness
+
+- [x] CI pipeline
+  - [x] Build + test on Linux/macOS
+  - [x] Run smoke test in CI
+  - [x] Enforce formatting/lint checks
+- [ ] Reliability
+  - [ ] Graceful shutdown and signal handling tests
+  - [ ] AOF corruption recovery behavior
+  - [ ] Connection limits / backpressure handling
+- [ ] Security & hardening
+  - [ ] AUTH / ACL basics
+  - [ ] Max payload / command size limits
+  - [ ] Timeout and idle connection policy
+- [ ] Observability
+  - [ ] Metrics endpoint (latency, QPS, memory, clients)
+  - [ ] Structured logs
+  - [ ] Health/readiness checks
+- [ ] Compatibility
+  - [ ] Redis protocol compatibility matrix
+  - [ ] Command behavior parity tests
+- [ ] Release
+  - [ ] Versioning + changelog
+  - [ ] Packaging (deb/docker)
