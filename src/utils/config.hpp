@@ -11,6 +11,9 @@ struct Config {
     bool        aof_enabled = true;
     std::string aof_path    = "vortek.aof";
     std::string log_level   = "info";  // debug | info | warn | error
+    std::string requirepass;
+    std::size_t max_request_bytes = 1024 * 1024;
+    std::size_t idle_timeout_seconds = 300;
     std::size_t max_clients = 10000;
     std::size_t max_pending_write_bytes = 1024 * 1024;
 };

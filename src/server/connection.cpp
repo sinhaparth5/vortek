@@ -41,6 +41,9 @@ std::shared_ptr<Connection> Connection::create(asio::ip::tcp::socket socket,
                                                AofPersistence*       aof,
                                                ServerStats*          stats,
                                                PubSubBroker*         broker,
+                                               std::string           requirepass,
+                                               std::size_t           max_request_bytes,
+                                               std::size_t           idle_timeout_seconds,
                                                std::size_t           max_pending_write_bytes) {
     return std::shared_ptr<Connection>(
         new Connection(std::move(socket),
@@ -49,6 +52,9 @@ std::shared_ptr<Connection> Connection::create(asio::ip::tcp::socket socket,
                        aof,
                        stats,
                        broker,
+                       std::move(requirepass),
+                       max_request_bytes,
+                       idle_timeout_seconds,
                        max_pending_write_bytes));
 }
 
@@ -58,14 +64,22 @@ Connection::Connection(asio::ip::tcp::socket socket,
                        AofPersistence*       aof,
                        ServerStats*          stats,
                        PubSubBroker*         broker,
+                       std::string           requirepass,
+                       std::size_t           max_request_bytes,
+                       std::size_t           idle_timeout_seconds,
                        std::size_t           max_pending_write_bytes)
     : socket_(std::move(socket))
+    , idle_timer_(socket_.get_executor())
     , store_(store)
     , dispatcher_(dispatcher)
     , aof_(aof)
     , stats_(stats)
     , broker_(broker)
+    , requirepass_(std::move(requirepass))
+    , max_request_bytes_(max_request_bytes)
+    , idle_timeout_(std::chrono::seconds(idle_timeout_seconds))
     , max_pending_write_bytes_(max_pending_write_bytes) {
+    authenticated_ = requirepass_.empty();
     if (stats_)
         stats_->connected_clients.fetch_add(1, std::memory_order_relaxed);
 }
@@ -85,6 +99,7 @@ Connection::~Connection() {
 // ---------------------------------------------------------------------------
 
 void Connection::start() {
+    reset_idle_timer();
     do_read();
 }
 
@@ -108,6 +123,7 @@ void Connection::do_read() {
                 close_socket();
                 return;
             }
+            reset_idle_timer();
             handle_data(bytes);
         });
 }
@@ -116,6 +132,14 @@ void Connection::handle_data(std::size_t bytes) {
     std::string responses;
 
     try {
+        if (parser_.buffered_size() + bytes > max_request_bytes_) {
+            responses += serialize(RespError{"ERR max request size exceeded"});
+            close_after_write_ = true;
+            parser_.reset();
+            do_write(std::move(responses));
+            return;
+        }
+
         std::string_view chunk(read_buf_.data(), bytes);
         bool             first = true;
 
@@ -130,6 +154,16 @@ void Connection::handle_data(std::size_t bytes) {
                     RespError{"ERR protocol error: expected command array"});
                 parser_.reset();
                 break;
+            }
+
+            if (cmd->name == "AUTH") {
+                responses += serialize(handle_auth(*cmd));
+                continue;
+            }
+
+            if (!authenticated_) {
+                responses += serialize(RespError{"NOAUTH Authentication required."});
+                continue;
             }
 
             if (cmd->name == "SUBSCRIBE") {
@@ -161,6 +195,18 @@ void Connection::handle_data(std::size_t bytes) {
         do_write(std::move(responses));
     else
         do_read();
+}
+
+RespValue Connection::handle_auth(const Command& cmd) {
+    if (cmd.args.size() != 1)
+        return RespError{"ERR wrong number of arguments for 'AUTH' command"};
+    if (requirepass_.empty())
+        return RespError{"ERR AUTH called without any password configured"};
+    if (cmd.args[0] != requirepass_)
+        return RespError{"ERR invalid password"};
+
+    authenticated_ = true;
+    return RespSimpleString{"OK"};
 }
 
 void Connection::handle_subscribe(const Command& cmd) {
@@ -276,15 +322,39 @@ void Connection::flush_write_queue() {
             }
 
             write_in_progress_ = false;
+            if (close_after_write_) {
+                close_socket();
+                return;
+            }
+            reset_idle_timer();
             do_read();
         }
     );
 }
 
 void Connection::close_socket() {
+    idle_timer_.cancel();
     asio::error_code ignored_ec;
     socket_.shutdown(asio::ip::tcp::socket::shutdown_both, ignored_ec);
     socket_.close(ignored_ec);
+}
+
+void Connection::reset_idle_timer() {
+    if (idle_timeout_.count() == 0 || !socket_.is_open())
+        return;
+
+    idle_timer_.expires_after(idle_timeout_);
+    auto self = shared_from_this();
+    idle_timer_.async_wait([this, self](const asio::error_code& ec) {
+        if (ec == asio::error::operation_aborted || !socket_.is_open())
+            return;
+        if (ec) {
+            log::error("idle timer error: " + ec.message());
+            return;
+        }
+        log::warn("closing idle connection");
+        close_socket();
+    });
 }
 
 }  // namespace vortek

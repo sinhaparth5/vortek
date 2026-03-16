@@ -23,7 +23,10 @@ static void print_usage(const char* prog) {
         "  --port <n>          TCP port to listen on        (default: 6379)\n"
         "  --aof <path>        Enable AOF and set file path (default: vortek.aof)\n"
         "  --no-aof            Disable AOF persistence\n"
+        "  --requirepass <pw>  Require AUTH with this password\n"
         "  --log-level <lvl>   debug | info | warn | error  (default: info)\n"
+        "  --max-request-bytes <n>  Max buffered request bytes per connection\n"
+        "  --idle-timeout-seconds <n>  Close idle connections after n seconds\n"
         "  --max-clients <n>   Maximum concurrent client connections\n"
         "  --max-pending-write-bytes <n>  Max buffered reply bytes per connection\n"
         "  --help              Show this help message\n"
@@ -64,8 +67,16 @@ static vortek::Config parse_args(int argc, char* argv[]) {
             cfg.aof_enabled = true;
         } else if (arg == "--no-aof") {
             cfg.aof_enabled = false;
+        } else if (arg == "--requirepass") {
+            cfg.requirepass = std::string(need_next());
         } else if (arg == "--log-level") {
             cfg.log_level = std::string(need_next());
+        } else if (arg == "--max-request-bytes") {
+            cfg.max_request_bytes
+                = static_cast<std::size_t>(std::stoull(std::string(need_next())));
+        } else if (arg == "--idle-timeout-seconds") {
+            cfg.idle_timeout_seconds
+                = static_cast<std::size_t>(std::stoull(std::string(need_next())));
         } else if (arg == "--max-clients") {
             cfg.max_clients = static_cast<std::size_t>(std::stoull(std::string(need_next())));
         } else if (arg == "--max-pending-write-bytes") {

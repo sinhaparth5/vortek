@@ -107,10 +107,10 @@
   - [x] Graceful shutdown and signal handling tests
   - [x] AOF corruption recovery behavior
   - [x] Connection limits / backpressure handling
-- [ ] Security & hardening
-  - [ ] AUTH / ACL basics
-  - [ ] Max payload / command size limits
-  - [ ] Timeout and idle connection policy
+- [x] Security & hardening
+  - [x] AUTH / ACL basics
+  - [x] Max payload / command size limits
+  - [x] Timeout and idle connection policy
 - [ ] Observability
   - [ ] Metrics endpoint (latency, QPS, memory, clients)
   - [ ] Structured logs

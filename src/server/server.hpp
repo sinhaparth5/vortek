@@ -34,6 +34,9 @@ private:
     asio::ip::tcp::acceptor acceptor_;
     asio::steady_timer      signal_poll_timer_;
     std::atomic_bool        stopping_{false};
+    std::string             requirepass_;
+    std::size_t             max_request_bytes_;
+    std::size_t             idle_timeout_seconds_;
     std::size_t             max_clients_;
     std::size_t             max_pending_write_bytes_;
     KvStore&                store_;

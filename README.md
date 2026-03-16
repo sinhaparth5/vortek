@@ -63,7 +63,12 @@ cmake --build build --parallel
 | `--port <n>` | `6379` | TCP port to listen on |
 | `--aof <path>` | `vortek.aof` | Enable AOF and set the file path |
 | `--no-aof` | — | Disable AOF persistence |
+| `--requirepass <pw>` | empty | Require clients to authenticate via `AUTH` |
 | `--log-level <lvl>` | `info` | `debug` \| `info` \| `warn` \| `error` |
+| `--max-request-bytes <n>` | `1048576` | Maximum buffered request size per connection |
+| `--idle-timeout-seconds <n>` | `300` | Close a connection after `n` seconds of inactivity |
+| `--max-clients <n>` | `10000` | Maximum concurrent client connections |
+| `--max-pending-write-bytes <n>` | `1048576` | Maximum buffered reply bytes per connection |
 | `--help` | — | Print usage and exit |
 
 ## Running Tests
@@ -88,6 +93,7 @@ With a server running, exercise all commands end-to-end:
 | Command | Syntax | Description |
 |---|---|---|
 | `PING` | `PING [msg]` | Returns `PONG` or echoes `msg` |
+| `AUTH` | `AUTH password` | Authenticate when `--requirepass` is configured |
 | `SET` | `SET key value [EX s] [PX ms] [NX\|XX]` | Set a key |
 | `GET` | `GET key` | Get a key's value |
 | `DEL` | `DEL key [key ...]` | Delete one or more keys |

@@ -10,6 +10,7 @@
 #include <asio.hpp>
 
 #include <array>
+#include <chrono>
 #include <cstddef>
 #include <deque>
 #include <memory>
@@ -27,6 +28,9 @@ public:
                                               AofPersistence*       aof,
                                               ServerStats*          stats,
                                               PubSubBroker*         broker,
+                                              std::string           requirepass,
+                                              std::size_t           max_request_bytes,
+                                              std::size_t           idle_timeout_seconds,
                                               std::size_t           max_pending_write_bytes);
 
     void start();
@@ -39,18 +43,24 @@ private:
                AofPersistence*       aof,
                ServerStats*          stats,
                PubSubBroker*         broker,
+               std::string           requirepass,
+               std::size_t           max_request_bytes,
+               std::size_t           idle_timeout_seconds,
                std::size_t           max_pending_write_bytes);
 
     void do_read();
     void handle_data(std::size_t bytes);
+    RespValue handle_auth(const Command& cmd);
     void handle_subscribe(const Command& cmd);
     void handle_unsubscribe(const Command& cmd);
     void push_message(std::string_view channel, std::string message);
     void do_write(std::string data);
     void flush_write_queue();
     void close_socket();
+    void reset_idle_timer();
 
     asio::ip::tcp::socket        socket_;
+    asio::steady_timer           idle_timer_;
     KvStore&                     store_;
     const Dispatcher&            dispatcher_;
     AofPersistence*              aof_;     // non-owning, may be null
@@ -60,8 +70,13 @@ private:
     std::array<char, 4096>       read_buf_;
     std::string                  write_buf_;
     std::deque<std::string>      write_queue_;
+    std::string                  requirepass_;
+    std::size_t                  max_request_bytes_;
+    std::chrono::seconds         idle_timeout_;
     std::size_t                  max_pending_write_bytes_;
     std::size_t                  pending_write_bytes_ = 0;
+    bool                         authenticated_       = false;
+    bool                         close_after_write_   = false;
     bool                         write_in_progress_   = false;
     bool                         read_in_progress_    = false;
     std::unordered_set<std::string> subscribed_channels_;

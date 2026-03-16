@@ -27,6 +27,9 @@ Server::Server(const Config&     cfg,
     : acceptor_(io_ctx_,
                 asio::ip::tcp::endpoint(asio::ip::tcp::v4(), cfg.port))
     , signal_poll_timer_(io_ctx_)
+    , requirepass_(cfg.requirepass)
+    , max_request_bytes_(cfg.max_request_bytes)
+    , idle_timeout_seconds_(cfg.idle_timeout_seconds)
     , max_clients_(cfg.max_clients)
     , max_pending_write_bytes_(cfg.max_pending_write_bytes)
     , store_(store)
@@ -114,6 +117,9 @@ void Server::do_accept() {
                     aof_,
                     stats_,
                     broker_,
+                    requirepass_,
+                    max_request_bytes_,
+                    idle_timeout_seconds_,
                     max_pending_write_bytes_)
                     ->start();
             } else if (ec == asio::error::operation_aborted || stopping_.load()) {
