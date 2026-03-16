@@ -5,6 +5,8 @@ add_executable(vortek_tests
     command_tests.cpp
     collection_tests.cpp
     pubsub_tests.cpp
+    aof_persistence_tests.cpp
+    config_loader_tests.cpp
 )
 
 target_link_libraries(vortek_tests
@@ -17,3 +19,14 @@ target_link_libraries(vortek_tests
 include(CTest)
 include(Catch)
 catch_discover_tests(vortek_tests)
+
+if(UNIX)
+    add_test(
+        NAME vortek_signal_shutdown_sigint
+        COMMAND ${CMAKE_SOURCE_DIR}/scripts/test_signal_shutdown.sh $<TARGET_FILE:vortek> SIGINT
+    )
+    add_test(
+        NAME vortek_signal_shutdown_sigterm
+        COMMAND ${CMAKE_SOURCE_DIR}/scripts/test_signal_shutdown.sh $<TARGET_FILE:vortek> SIGTERM
+    )
+endif()

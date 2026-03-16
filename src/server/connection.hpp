@@ -10,6 +10,8 @@
 #include <asio.hpp>
 
 #include <array>
+#include <cstddef>
+#include <deque>
 #include <memory>
 #include <string>
 #include <unordered_set>
@@ -24,7 +26,8 @@ public:
                                               const Dispatcher&     dispatcher,
                                               AofPersistence*       aof,
                                               ServerStats*          stats,
-                                              PubSubBroker*         broker);
+                                              PubSubBroker*         broker,
+                                              std::size_t           max_pending_write_bytes);
 
     void start();
     ~Connection();  // decrements stats_->connected_clients, unsubscribes from all channels
@@ -35,7 +38,8 @@ private:
                const Dispatcher&     dispatcher,
                AofPersistence*       aof,
                ServerStats*          stats,
-               PubSubBroker*         broker);
+               PubSubBroker*         broker,
+               std::size_t           max_pending_write_bytes);
 
     void do_read();
     void handle_data(std::size_t bytes);
@@ -43,6 +47,8 @@ private:
     void handle_unsubscribe(const Command& cmd);
     void push_message(std::string_view channel, std::string message);
     void do_write(std::string data);
+    void flush_write_queue();
+    void close_socket();
 
     asio::ip::tcp::socket        socket_;
     KvStore&                     store_;
@@ -53,6 +59,11 @@ private:
     RespParser                   parser_;
     std::array<char, 4096>       read_buf_;
     std::string                  write_buf_;
+    std::deque<std::string>      write_queue_;
+    std::size_t                  max_pending_write_bytes_;
+    std::size_t                  pending_write_bytes_ = 0;
+    bool                         write_in_progress_   = false;
+    bool                         read_in_progress_    = false;
     std::unordered_set<std::string> subscribed_channels_;
 };
 

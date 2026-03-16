@@ -24,6 +24,10 @@ void RespParser::reset() {
     buf_.clear();
 }
 
+std::size_t RespParser::buffered_size() const noexcept {
+    return buf_.size();
+}
+
 // ---------------------------------------------------------------------------
 // Helpers
 // ---------------------------------------------------------------------------

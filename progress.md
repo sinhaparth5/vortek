@@ -103,10 +103,10 @@
   - [x] Build + test on Linux/macOS
   - [x] Run smoke test in CI
   - [x] Enforce formatting/lint checks
-- [ ] Reliability
-  - [ ] Graceful shutdown and signal handling tests
-  - [ ] AOF corruption recovery behavior
-  - [ ] Connection limits / backpressure handling
+- [x] Reliability
+  - [x] Graceful shutdown and signal handling tests
+  - [x] AOF corruption recovery behavior
+  - [x] Connection limits / backpressure handling
 - [ ] Security & hardening
   - [ ] AUTH / ACL basics
   - [ ] Max payload / command size limits

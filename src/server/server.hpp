@@ -8,6 +8,8 @@
 #include "utils/config.hpp"
 
 #include <asio.hpp>
+#include <atomic>
+#include <cstddef>
 
 namespace vortek {
 
@@ -24,10 +26,16 @@ public:
     void stop();
 
 private:
+    void setup_signal_handlers();
+    void poll_signal_flag();
     void do_accept();
 
     asio::io_context        io_ctx_;
     asio::ip::tcp::acceptor acceptor_;
+    asio::steady_timer      signal_poll_timer_;
+    std::atomic_bool        stopping_{false};
+    std::size_t             max_clients_;
+    std::size_t             max_pending_write_bytes_;
     KvStore&                store_;
     const Dispatcher&       dispatcher_;
     AofPersistence*         aof_;

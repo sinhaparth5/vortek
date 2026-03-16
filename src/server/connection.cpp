@@ -40,9 +40,16 @@ std::shared_ptr<Connection> Connection::create(asio::ip::tcp::socket socket,
                                                const Dispatcher&     dispatcher,
                                                AofPersistence*       aof,
                                                ServerStats*          stats,
-                                               PubSubBroker*         broker) {
+                                               PubSubBroker*         broker,
+                                               std::size_t           max_pending_write_bytes) {
     return std::shared_ptr<Connection>(
-        new Connection(std::move(socket), store, dispatcher, aof, stats, broker));
+        new Connection(std::move(socket),
+                       store,
+                       dispatcher,
+                       aof,
+                       stats,
+                       broker,
+                       max_pending_write_bytes));
 }
 
 Connection::Connection(asio::ip::tcp::socket socket,
@@ -50,13 +57,15 @@ Connection::Connection(asio::ip::tcp::socket socket,
                        const Dispatcher&     dispatcher,
                        AofPersistence*       aof,
                        ServerStats*          stats,
-                       PubSubBroker*         broker)
+                       PubSubBroker*         broker,
+                       std::size_t           max_pending_write_bytes)
     : socket_(std::move(socket))
     , store_(store)
     , dispatcher_(dispatcher)
     , aof_(aof)
     , stats_(stats)
-    , broker_(broker) {
+    , broker_(broker)
+    , max_pending_write_bytes_(max_pending_write_bytes) {
     if (stats_)
         stats_->connected_clients.fetch_add(1, std::memory_order_relaxed);
 }
@@ -84,13 +93,19 @@ void Connection::start() {
 // ---------------------------------------------------------------------------
 
 void Connection::do_read() {
+    if (read_in_progress_ || !socket_.is_open())
+        return;
+
+    read_in_progress_ = true;
     auto self = shared_from_this();
     socket_.async_read_some(
         asio::buffer(read_buf_),
         [this, self](const asio::error_code& ec, std::size_t bytes) {
+            read_in_progress_ = false;
             if (ec) {
                 if (ec != asio::error::eof && ec != asio::error::connection_reset)
                     log::error("read error: " + ec.message());
+                close_socket();
                 return;
             }
             handle_data(bytes);
@@ -214,18 +229,62 @@ void Connection::push_message(std::string_view channel, std::string message) {
 }
 
 void Connection::do_write(std::string data) {
-    write_buf_ = std::move(data);
+    if (!socket_.is_open())
+        return;
+
+    if (pending_write_bytes_ + data.size() > max_pending_write_bytes_) {
+        log::warn("closing slow client due to output buffer limit");
+        close_socket();
+        return;
+    }
+
+    pending_write_bytes_ += data.size();
+    write_queue_.push_back(std::move(data));
+    if (write_in_progress_)
+        return;
+    flush_write_queue();
+}
+
+void Connection::flush_write_queue() {
+    if (write_queue_.empty() || !socket_.is_open()) {
+        write_in_progress_ = false;
+        return;
+    }
+
+    write_in_progress_ = true;
+    write_buf_         = std::move(write_queue_.front());
+    write_queue_.pop_front();
+
     auto self  = shared_from_this();
     asio::async_write(
         socket_,
         asio::buffer(write_buf_),
-        [this, self](const asio::error_code& ec, std::size_t /*bytes*/) {
+        [this, self](const asio::error_code& ec, std::size_t bytes) {
             if (ec) {
                 log::error("write error: " + ec.message());
+                close_socket();
                 return;
             }
+            if (pending_write_bytes_ >= bytes)
+                pending_write_bytes_ -= bytes;
+            else
+                pending_write_bytes_ = 0;
+
+            if (!write_queue_.empty()) {
+                flush_write_queue();
+                return;
+            }
+
+            write_in_progress_ = false;
             do_read();
-        });
+        }
+    );
+}
+
+void Connection::close_socket() {
+    asio::error_code ignored_ec;
+    socket_.shutdown(asio::ip::tcp::socket::shutdown_both, ignored_ec);
+    socket_.close(ignored_ec);
 }
 
 }  // namespace vortek

@@ -24,6 +24,8 @@ static void print_usage(const char* prog) {
         "  --aof <path>        Enable AOF and set file path (default: vortek.aof)\n"
         "  --no-aof            Disable AOF persistence\n"
         "  --log-level <lvl>   debug | info | warn | error  (default: info)\n"
+        "  --max-clients <n>   Maximum concurrent client connections\n"
+        "  --max-pending-write-bytes <n>  Max buffered reply bytes per connection\n"
         "  --help              Show this help message\n"
         "\n"
         "CLI options override values from --config.\n",
@@ -64,6 +66,11 @@ static vortek::Config parse_args(int argc, char* argv[]) {
             cfg.aof_enabled = false;
         } else if (arg == "--log-level") {
             cfg.log_level = std::string(need_next());
+        } else if (arg == "--max-clients") {
+            cfg.max_clients = static_cast<std::size_t>(std::stoull(std::string(need_next())));
+        } else if (arg == "--max-pending-write-bytes") {
+            cfg.max_pending_write_bytes
+                = static_cast<std::size_t>(std::stoull(std::string(need_next())));
         } else if (arg == "--help" || arg == "-h") {
             print_usage(argv[0]);
             std::exit(0);

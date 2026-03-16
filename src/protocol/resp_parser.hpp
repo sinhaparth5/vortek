@@ -30,6 +30,9 @@ public:
     // Reset internal buffer (e.g. after a connection error).
     void reset();
 
+    // Bytes currently buffered and not yet emitted as a complete value.
+    std::size_t buffered_size() const noexcept;
+
 private:
     std::string buf_;
 

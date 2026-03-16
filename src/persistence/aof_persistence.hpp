@@ -43,6 +43,9 @@ public:
     static bool is_write_command(std::string_view name) noexcept;
 
 private:
+    bool reopen_append_stream();
+    bool truncate_to(std::size_t bytes);
+
     std::string   path_;
     std::ofstream file_;
     std::mutex    mutex_;

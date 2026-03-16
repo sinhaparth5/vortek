@@ -1,6 +1,7 @@
 #pragma once
 
 #include <cstdint>
+#include <cstddef>
 #include <string>
 
 namespace vortek {
@@ -10,6 +11,8 @@ struct Config {
     bool        aof_enabled = true;
     std::string aof_path    = "vortek.aof";
     std::string log_level   = "info";  // debug | info | warn | error
+    std::size_t max_clients = 10000;
+    std::size_t max_pending_write_bytes = 1024 * 1024;
 };
 
 }  // namespace vortek

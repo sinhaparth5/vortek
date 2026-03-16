@@ -4,6 +4,7 @@
 #include "protocol/resp_serializer.hpp"
 #include "utils/logger.hpp"
 
+#include <filesystem>
 #include <fstream>
 #include <iterator>
 #include <unordered_set>
@@ -30,6 +31,36 @@ AofPersistence::~AofPersistence() {
 
 bool AofPersistence::is_open() const noexcept {
     return file_.is_open();
+}
+
+bool AofPersistence::reopen_append_stream() {
+    file_.close();
+    file_.clear();
+    file_.open(path_, std::ios::app | std::ios::binary);
+    if (!file_.is_open()) {
+        log::error("AOF: failed to reopen file after replay recovery: " + path_);
+        return false;
+    }
+    return true;
+}
+
+bool AofPersistence::truncate_to(std::size_t bytes) {
+    try {
+        file_.flush();
+        file_.close();
+        std::filesystem::resize_file(path_, bytes);
+        file_.clear();
+        file_.open(path_, std::ios::app | std::ios::binary);
+    } catch (const std::exception& ex) {
+        log::error("AOF: failed to truncate file: " + std::string(ex.what()));
+        return false;
+    }
+
+    if (!file_.is_open()) {
+        log::error("AOF: failed to reopen file after truncate: " + path_);
+        return false;
+    }
+    return true;
 }
 
 // ---------------------------------------------------------------------------
@@ -85,6 +116,7 @@ std::size_t AofPersistence::replay(const Dispatcher& dispatcher, KvStore& store)
     RespParser  parser;
     std::size_t count = 0;
     bool        first = true;
+    bool        parse_error = false;
 
     while (true) {
         // Feed the whole buffer on first iteration, then drain with empty chunks.
@@ -93,6 +125,7 @@ std::size_t AofPersistence::replay(const Dispatcher& dispatcher, KvStore& store)
             val = parser.feed(first ? std::string_view{content} : std::string_view{});
         } catch (const std::exception& ex) {
             log::error("AOF: parse error during replay — " + std::string(ex.what()));
+            parse_error = true;
             break;
         }
 
@@ -114,6 +147,16 @@ std::size_t AofPersistence::replay(const Dispatcher& dispatcher, KvStore& store)
         }
 
         ++count;
+    }
+
+    const std::size_t trailing_bytes = parser.buffered_size();
+    if (parse_error || trailing_bytes > 0) {
+        const std::size_t valid_bytes = content.size() - trailing_bytes;
+        log::warn("AOF: corruption/incomplete tail detected at byte "
+                  + std::to_string(valid_bytes) + ", truncating file");
+        truncate_to(valid_bytes);
+    } else {
+        reopen_append_stream();
     }
 
     log::info("AOF: replayed " + std::to_string(count) + " commands from " + path_);
