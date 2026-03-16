@@ -2,6 +2,7 @@
 
 #include <algorithm>
 #include <mutex>
+#include <type_traits>
 
 namespace vortek {
 
@@ -86,6 +87,31 @@ bool KvStore::persist(std::string_view key) {
 std::size_t KvStore::size() const {
     std::shared_lock lock(mutex_);
     return data_.size();
+}
+
+std::size_t KvStore::approx_memory_bytes() const {
+    std::shared_lock lock(mutex_);
+    std::size_t total = 0;
+
+    for (const auto& [key, entry] : data_) {
+        total += key.size();
+        std::visit(
+            [&total](const auto& typed) {
+                using T = std::decay_t<decltype(typed)>;
+                if constexpr (std::is_same_v<T, StringValue>) {
+                    total += typed.data.size();
+                } else if constexpr (std::is_same_v<T, ListValue>) {
+                    for (const auto& e : typed.elements) total += e.size();
+                } else if constexpr (std::is_same_v<T, SetValue>) {
+                    for (const auto& m : typed.members) total += m.size();
+                } else if constexpr (std::is_same_v<T, HashValue>) {
+                    for (const auto& [f, v] : typed.fields) total += f.size() + v.size();
+                }
+            },
+            entry.value.data());
+    }
+
+    return total;
 }
 
 // ---------------------------------------------------------------------------

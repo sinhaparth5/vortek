@@ -1,5 +1,7 @@
 #include "generic_cmds.hpp"
 
+#include <algorithm>
+#include <atomic>
 #include <charconv>
 #include <chrono>
 #include <string>
@@ -74,6 +76,41 @@ RespValue cmd_persist(const Command& cmd, KvStore& store) {
     if (cmd.args.size() != 1)
         return wrong_args(cmd.name);
     return RespInteger{store.persist(cmd.args[0]) ? 1 : 0};
+}
+
+// HEALTH
+RespValue cmd_health(const Command& cmd, KvStore& /*store*/) {
+    if (!cmd.args.empty())
+        return wrong_args(cmd.name);
+    return RespSimpleString{"OK"};
+}
+
+// READY
+RespValue cmd_ready(const Command& cmd, KvStore& /*store*/, const ServerStats& stats) {
+    if (!cmd.args.empty())
+        return wrong_args(cmd.name);
+    if (!stats.ready.load(std::memory_order_relaxed))
+        return RespError{"ERR server not ready"};
+    return RespSimpleString{"READY"};
+}
+
+// METRICS (Prometheus exposition text)
+RespValue cmd_metrics(const Command& cmd, KvStore& store, const ServerStats& stats) {
+    if (!cmd.args.empty())
+        return wrong_args(cmd.name);
+
+    const int64_t uptime = std::max<int64_t>(1, stats.uptime_seconds());
+    const double  qps = static_cast<double>(stats.total_commands.load()) / static_cast<double>(uptime);
+
+    std::string body;
+    body += "vortek_uptime_seconds " + std::to_string(stats.uptime_seconds()) + "\n";
+    body += "vortek_connected_clients " + std::to_string(stats.connected_clients.load()) + "\n";
+    body += "vortek_total_commands_processed " + std::to_string(stats.total_commands.load()) + "\n";
+    body += "vortek_commands_per_second " + std::to_string(qps) + "\n";
+    body += "vortek_key_count " + std::to_string(store.size()) + "\n";
+    body += "vortek_memory_bytes_approx " + std::to_string(store.approx_memory_bytes()) + "\n";
+    body += "vortek_ready " + std::to_string(stats.ready.load(std::memory_order_relaxed) ? 1 : 0) + "\n";
+    return RespBulkString{std::move(body)};
 }
 
 // ---------------------------------------------------------------------------
@@ -156,11 +193,20 @@ void register_generic(Dispatcher& dispatcher, ServerStats& stats) {
     dispatcher.register_handler("EXPIRE",  cmd_expire);
     dispatcher.register_handler("TTL",     cmd_ttl);
     dispatcher.register_handler("PERSIST", cmd_persist);
+    dispatcher.register_handler("HEALTH",  cmd_health);
 
     // Capture stats by reference — safe because stats outlives the dispatcher.
     dispatcher.register_handler("INFO",
         [&stats](const Command& cmd, KvStore& store) {
             return cmd_info(cmd, store, stats);
+        });
+    dispatcher.register_handler("READY",
+        [&stats](const Command& cmd, KvStore& store) {
+            return cmd_ready(cmd, store, stats);
+        });
+    dispatcher.register_handler("METRICS",
+        [&stats](const Command& cmd, KvStore& store) {
+            return cmd_metrics(cmd, store, stats);
         });
 }
 

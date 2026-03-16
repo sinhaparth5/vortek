@@ -125,6 +125,11 @@ target_link_libraries(vortek
         vortek_warnings
 )
 
+include(GNUInstallDirs)
+install(TARGETS vortek
+    RUNTIME DESTINATION ${CMAKE_INSTALL_BINDIR}
+)
+
 # Google Benchmark
 FetchContent_Declare(
     googlebenchmark
@@ -148,3 +153,15 @@ add_subdirectory(tests)
 
 # Benchmarks
 add_subdirectory(benchmarks)
+
+# Packaging (tarball + .deb via CPack)
+set(CPACK_PACKAGE_NAME "vortek")
+set(CPACK_PACKAGE_VENDOR "Vortek")
+set(CPACK_PACKAGE_DESCRIPTION_SUMMARY "Lightweight Redis-inspired in-memory key-value store")
+set(CPACK_PACKAGE_VERSION ${PROJECT_VERSION})
+set(CPACK_RESOURCE_FILE_LICENSE "${CMAKE_SOURCE_DIR}/LICENSE")
+set(CPACK_RESOURCE_FILE_README "${CMAKE_SOURCE_DIR}/README.md")
+set(CPACK_GENERATOR "TGZ;DEB")
+set(CPACK_DEBIAN_PACKAGE_MAINTAINER "Vortek Maintainers")
+set(CPACK_DEBIAN_FILE_NAME DEB-DEFAULT)
+include(CPack)

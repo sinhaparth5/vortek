@@ -7,6 +7,7 @@ add_executable(vortek_tests
     pubsub_tests.cpp
     aof_persistence_tests.cpp
     config_loader_tests.cpp
+    compatibility_tests.cpp
 )
 
 target_link_libraries(vortek_tests

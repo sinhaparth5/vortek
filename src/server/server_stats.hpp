@@ -14,6 +14,7 @@ struct ServerStats {
     Clock::time_point     start_time{Clock::now()};
     std::atomic<int64_t>  connected_clients{0};
     std::atomic<int64_t>  total_commands{0};
+    std::atomic<bool>     ready{false};
 
     // Filled in from Config before the server starts accepting.
     uint16_t    port        = 6379;

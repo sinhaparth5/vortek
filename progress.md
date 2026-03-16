@@ -111,13 +111,13 @@
   - [x] AUTH / ACL basics
   - [x] Max payload / command size limits
   - [x] Timeout and idle connection policy
-- [ ] Observability
-  - [ ] Metrics endpoint (latency, QPS, memory, clients)
-  - [ ] Structured logs
-  - [ ] Health/readiness checks
-- [ ] Compatibility
-  - [ ] Redis protocol compatibility matrix
-  - [ ] Command behavior parity tests
-- [ ] Release
-  - [ ] Versioning + changelog
-  - [ ] Packaging (deb/docker)
+- [x] Observability
+  - [x] Metrics endpoint (latency, QPS, memory, clients)
+  - [x] Structured logs
+  - [x] Health/readiness checks
+- [x] Compatibility
+  - [x] Redis protocol compatibility matrix
+  - [x] Command behavior parity tests
+- [x] Release
+  - [x] Versioning + changelog
+  - [x] Packaging (deb/docker)

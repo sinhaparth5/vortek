@@ -23,6 +23,8 @@ Config load_config_file(std::string_view path, const Config& base) {
             cfg.port = static_cast<uint16_t>(*v);
         if (auto v = (*server)["log_level"].value<std::string>())
             cfg.log_level = *v;
+        if (auto v = (*server)["log_format"].value<std::string>())
+            cfg.log_format = *v;
         if (auto v = (*server)["max_request_bytes"].value<int64_t>())
             cfg.max_request_bytes = static_cast<std::size_t>(*v);
         if (auto v = (*server)["idle_timeout_seconds"].value<int64_t>())

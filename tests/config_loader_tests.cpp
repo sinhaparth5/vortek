@@ -25,6 +25,7 @@ TEST_CASE("Config loader reads security and connection limits", "[config]") {
         out << "[server]\n";
         out << "port = 6380\n";
         out << "log_level = \"debug\"\n";
+        out << "log_format = \"json\"\n";
         out << "max_request_bytes = 32768\n";
         out << "idle_timeout_seconds = 45\n";
         out << "max_clients = 123\n";
@@ -37,6 +38,7 @@ TEST_CASE("Config loader reads security and connection limits", "[config]") {
     const Config cfg = load_config_file(path);
     CHECK(cfg.port == 6380);
     CHECK(cfg.log_level == "debug");
+    CHECK(cfg.log_format == "json");
     CHECK(cfg.max_request_bytes == 32768);
     CHECK(cfg.idle_timeout_seconds == 45);
     CHECK(cfg.max_clients == 123);

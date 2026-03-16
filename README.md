@@ -15,6 +15,10 @@ It implements a Redis-compatible wire protocol (RESP2) with a focus on clean arc
 - **Async networking** — standalone Asio, no Boost required
 - **Structured logging** — spdlog with configurable log level
 
+## Versioning
+
+Release history is tracked in [`CHANGELOG.md`](./CHANGELOG.md).
+
 ## Tech Stack
 
 | Concern | Library / Feature |
@@ -65,6 +69,7 @@ cmake --build build --parallel
 | `--no-aof` | — | Disable AOF persistence |
 | `--requirepass <pw>` | empty | Require clients to authenticate via `AUTH` |
 | `--log-level <lvl>` | `info` | `debug` \| `info` \| `warn` \| `error` |
+| `--log-format <fmt>` | `plain` | `plain` \| `json` structured logs |
 | `--max-request-bytes <n>` | `1048576` | Maximum buffered request size per connection |
 | `--idle-timeout-seconds <n>` | `300` | Close a connection after `n` seconds of inactivity |
 | `--max-clients <n>` | `10000` | Maximum concurrent client connections |
@@ -94,6 +99,9 @@ With a server running, exercise all commands end-to-end:
 |---|---|---|
 | `PING` | `PING [msg]` | Returns `PONG` or echoes `msg` |
 | `AUTH` | `AUTH password` | Authenticate when `--requirepass` is configured |
+| `HEALTH` | `HEALTH` | Liveness check (`OK`) |
+| `READY` | `READY` | Readiness check (`READY` or error) |
+| `METRICS` | `METRICS` | Prometheus-style metrics payload |
 | `SET` | `SET key value [EX s] [PX ms] [NX\|XX]` | Set a key |
 | `GET` | `GET key` | Get a key's value |
 | `DEL` | `DEL key [key ...]` | Delete one or more keys |
@@ -105,6 +113,26 @@ With a server running, exercise all commands end-to-end:
 | `DECR` | `DECR key` | Decrement integer value by 1 |
 | `INCRBY` | `INCRBY key n` | Increment by `n` |
 | `DECRBY` | `DECRBY key n` | Decrement by `n` |
+
+## Compatibility
+
+See [`COMPATIBILITY.md`](./COMPATIBILITY.md) for protocol/command parity status and known gaps.
+
+## Packaging
+
+### Docker
+
+```bash
+docker build -t vortek:0.1.0 .
+docker run --rm -p 6379:6379 vortek:0.1.0
+```
+
+### Debian package (`.deb`)
+
+```bash
+./scripts/package_deb.sh
+# output is generated in build/ as a .deb package
+```
 
 ## Architecture
 

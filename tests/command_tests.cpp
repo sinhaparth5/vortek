@@ -267,3 +267,49 @@ TEST_CASE("INFO unknown section returns error", "[cmd][info]") {
     auto& s = ctx.store;
     CHECK(run(d, s, {"INFO", "garbage"}).is<RespError>());
 }
+
+// ---------------------------------------------------------------------------
+// Observability
+// ---------------------------------------------------------------------------
+
+TEST_CASE("HEALTH returns OK", "[cmd][obs]") {
+    TestCtx ctx; auto& d = ctx.dispatcher;
+    auto& s = ctx.store;
+    auto r = run(d, s, {"HEALTH"});
+    REQUIRE(r.is<RespSimpleString>());
+    CHECK(r.get<RespSimpleString>().value == "OK");
+}
+
+TEST_CASE("READY returns error when server is not ready", "[cmd][obs]") {
+    TestCtx ctx; auto& d = ctx.dispatcher;
+    auto& s = ctx.store;
+    auto r = run(d, s, {"READY"});
+    REQUIRE(r.is<RespError>());
+}
+
+TEST_CASE("READY returns READY when server is ready", "[cmd][obs]") {
+    TestCtx ctx;
+    ctx.stats.ready.store(true);
+    auto& d = ctx.dispatcher;
+    auto& s = ctx.store;
+    auto r = run(d, s, {"READY"});
+    REQUIRE(r.is<RespSimpleString>());
+    CHECK(r.get<RespSimpleString>().value == "READY");
+}
+
+TEST_CASE("METRICS returns exposition payload", "[cmd][obs]") {
+    TestCtx ctx;
+    ctx.stats.ready.store(true);
+    auto& d = ctx.dispatcher;
+    auto& s = ctx.store;
+    run(d, s, {"SET", "obs:k", "obs:v"});
+    auto r = run(d, s, {"METRICS"});
+    REQUIRE(r.is<RespBulkString>());
+    const auto& body = r.get<RespBulkString>().value;
+    CHECK(body.find("vortek_uptime_seconds") != std::string::npos);
+    CHECK(body.find("vortek_connected_clients") != std::string::npos);
+    CHECK(body.find("vortek_total_commands_processed") != std::string::npos);
+    CHECK(body.find("vortek_key_count") != std::string::npos);
+    CHECK(body.find("vortek_memory_bytes_approx") != std::string::npos);
+    CHECK(body.find("vortek_ready 1") != std::string::npos);
+}

@@ -42,6 +42,8 @@ Server::Server(const Config&     cfg,
 }
 
 void Server::run() {
+    if (stats_)
+        stats_->ready.store(true, std::memory_order_relaxed);
     setup_signal_handlers();
     do_accept();
     io_ctx_.run();
@@ -50,6 +52,8 @@ void Server::run() {
 void Server::stop() {
     if (stopping_.exchange(true))
         return;
+    if (stats_)
+        stats_->ready.store(false, std::memory_order_relaxed);
 
     asio::error_code ignored_ec;
     acceptor_.cancel(ignored_ec);

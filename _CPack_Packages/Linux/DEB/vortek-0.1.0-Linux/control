@@ -1,0 +1,9 @@
+Architecture: amd64
+Description: Lightweight Redis-inspired in-memory key-value store
+Maintainer: Vortek Maintainers
+Package: vortek
+Priority: optional
+Section: devel
+Version: 0.1.0
+Installed-Size: 17851
+

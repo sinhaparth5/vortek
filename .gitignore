@@ -35,5 +35,16 @@ external/
 *.swp
 *~
 .DS_Store
-vortek.aof
+
+# Runtime/local artifacts
+*.aof
+*.log
+core
+core.*
+
+# Release/package artifacts
+vortek-*.tar.gz
+vortek_*.deb
+
+# Local config override
 vortek.toml

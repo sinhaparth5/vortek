@@ -57,6 +57,9 @@ public:
     // Number of keys currently in the store (includes not-yet-swept expired keys).
     std::size_t size() const;
 
+    // Approximate bytes used by keys + values (payload only, container overhead excluded).
+    std::size_t approx_memory_bytes() const;
+
 private:
     using Clock     = std::chrono::steady_clock;
     using TimePoint = Clock::time_point;

@@ -25,6 +25,7 @@ static void print_usage(const char* prog) {
         "  --no-aof            Disable AOF persistence\n"
         "  --requirepass <pw>  Require AUTH with this password\n"
         "  --log-level <lvl>   debug | info | warn | error  (default: info)\n"
+        "  --log-format <fmt>  plain | json (default: plain)\n"
         "  --max-request-bytes <n>  Max buffered request bytes per connection\n"
         "  --idle-timeout-seconds <n>  Close idle connections after n seconds\n"
         "  --max-clients <n>   Maximum concurrent client connections\n"
@@ -71,6 +72,8 @@ static vortek::Config parse_args(int argc, char* argv[]) {
             cfg.requirepass = std::string(need_next());
         } else if (arg == "--log-level") {
             cfg.log_level = std::string(need_next());
+        } else if (arg == "--log-format") {
+            cfg.log_format = std::string(need_next());
         } else if (arg == "--max-request-bytes") {
             cfg.max_request_bytes
                 = static_cast<std::size_t>(std::stoull(std::string(need_next())));
@@ -103,6 +106,7 @@ int main(int argc, char* argv[]) {
         return 1;
     }
 
+    vortek::log::set_format(cfg.log_format);
     vortek::log::set_level(cfg.log_level);
     vortek::log::info("Vortek v0.1.0 starting");
 
