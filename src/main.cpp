@@ -16,7 +16,7 @@
 
 static void print_usage(const char* prog) {
     std::printf(
-        "Usage: %s [options]\n"
+        "Usage1: %s [options]\n"
         "\n"
         "Options:\n"
         "  --config <path>     Load settings from a TOML config file\n"
